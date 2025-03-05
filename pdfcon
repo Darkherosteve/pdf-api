@@ -1,0 +1,41 @@
+
+<?php
+// pdf_conversion.php
+function convertExcelToPdf($outputExcelPath) {
+
+    // Define file paths
+    $excelFilePath = __DIR__ . '/Output.xlsx';  
+    $pdfFilePath =  __DIR__ . '/output.pdf';  
+
+    try {
+        // Initialize cURL
+        $ch = curl_init();
+        $url = 'http://103.251.17.34:8000/convert'; // Server endpoint
+
+        // Attach the Excel file
+        $fileData = new CURLFile($excelFilePath, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', basename($excelFilePath));
+
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: multipart/form-data']);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, ['file' => $fileData]);
+
+        // Execute cURL request
+        $response = curl_exec($ch);
+
+        if ($response === false) {
+            throw new Exception('Error executing cURL: ' . curl_error($ch));
+        }
+
+        // Save received PDF
+        file_put_contents($pdfFilePath, $response);
+        curl_close($ch);
+
+        echo json_encode(['status' => 'success', 'message' => 'PDF created!', 'filePath' => basename($pdfFilePath)]);
+
+    } catch (Exception $e) {
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    }
+}
+?>
